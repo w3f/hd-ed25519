@@ -92,6 +92,15 @@ pub struct ExpandedKeypair {
     pub public: PublicKey,
 }
 
+impl ExpandedKeypair {
+    pub fn sign_prehashed<D>(&self, h: D, context: Option<&'static [u8]>) 
+	  -> ed25519_dalek::Signature
+    where D: Digest<OutputSize = U64> + Default
+    {
+        self.secret.sign_prehashed::<D>(h, &self.public, context)
+    }
+}
+
 /*
 impl From<ExpandedSecretKey> for ExpandedKeypair {
 	fn from(secret: ExpandedSecretKey) -> ExpandedKeypair {
@@ -292,7 +301,9 @@ mod tests {
 			chaincode,
 		};
 
-		for _ in 1..10 {
+        let context = Some(b"testing testing 1 2 3" as &[u8]);
+
+		for i in 0..20 {
 			let extended_expanded_keypair1 = extended_expanded_keypair.derive_keypair_prehashed(h.clone());
 			let extended_public_key1 = extended_public_key.derive_public_key_prehashed(h.clone());
 			assert_eq!(extended_expanded_keypair1.chaincode,extended_public_key1.chaincode);
@@ -300,6 +311,20 @@ mod tests {
 			extended_expanded_keypair = extended_expanded_keypair1;
 			extended_public_key = extended_public_key1;
 			h.input(b"Another");
-		} 
+
+			if i % 5 == 0 {
+		        let good_sig = extended_expanded_keypair.key.sign_prehashed::<Sha512>(h.clone(), context);
+				let h_bad = h.clone().chain(b"oops");
+		        let bad_sig  = extended_expanded_keypair.key.sign_prehashed::<Sha512>(h_bad.clone(), context);
+
+		        assert!(extended_public_key.key.verify_prehashed::<Sha512>(h.clone(), context, &good_sig).is_ok(),
+		                "Verification of a valid signature failed!");
+		        assert!(extended_public_key.key.verify_prehashed::<Sha512>(h.clone(), context, &bad_sig).is_err(),
+		                "Verification of a signature on a different message passed!");
+		        assert!(extended_public_key.key.verify_prehashed::<Sha512>(h_bad,  context, &good_sig).is_err(),
+		                "Verification of a signature on a different message passed!");
+			} 
+		}
+		
 	}
 }
