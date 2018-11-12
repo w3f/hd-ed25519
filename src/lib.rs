@@ -303,11 +303,13 @@ mod tests {
 
         let context = Some(b"testing testing 1 2 3" as &[u8]);
 
-		for i in 0..20 {
+		for i in 0..30 {
 			let extended_expanded_keypair1 = extended_expanded_keypair.derive_keypair_prehashed(h.clone());
 			let extended_public_key1 = extended_public_key.derive_public_key_prehashed(h.clone());
-			assert_eq!(extended_expanded_keypair1.chaincode,extended_public_key1.chaincode);
-			assert_eq!(extended_expanded_keypair1.key.public,extended_public_key1.key);
+			assert_eq!(extended_expanded_keypair1.chaincode,extended_public_key1.chaincode,
+				"Chain code derivation failed!");
+			assert_eq!(extended_expanded_keypair1.key.public,extended_public_key1.key,
+				"Public and secret key derivation missmatch!");
 			extended_expanded_keypair = extended_expanded_keypair1;
 			extended_public_key = extended_public_key1;
 			h.input(b"Another");
