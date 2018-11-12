@@ -1,0 +1,51 @@
+[package]
+name = "hd-ed25519"
+version = "0.1.0"
+authors = ["Jeff Burdges <jeff@web3.foundation>"]
+edition = "2018"
+readme = "README.md"
+license = "BSD-3-Clause"
+repository = "https://github.com/dalek-cryptography/curve25519-dalek"
+homepage = "https://dalek.rs/curve25519-dalek"
+documentation = "https://docs.rs/curve25519-dalek"
+categories = ["cryptography"] # "no-std"
+keywords = ["cryptography", "curve25519", "ECC"]
+description = ""
+
+
+[dependencies.ed25519-dalek]
+version = "1.0.0-pre.0"
+default-features = false
+# version = "^0.8.1"
+
+[dependencies.curve25519-dalek]
+version = "1.0.0-pre.0"
+default-features = false
+# version = "^0.2"
+
+[dependencies.rand]
+version = "0.5"
+default-features = false
+features = ["i128_support"]
+
+[dependencies.digest]
+version = "^0.7"
+
+[dependencies.generic-array]
+# same version that digest depends on
+version = "0.9"
+
+[dependencies.serde]
+version = "^1.0"
+optional = true
+
+[features]
+default = ["std", "u64_backend"]
+# We don't add "rand/std" here because it would enable a bunch of Fuchsia dependencies.
+std = ["curve25519-dalek/std"]
+alloc = ["curve25519-dalek/alloc"]
+# nightly = ["curve25519-dalek/nightly", "rand/nightly", "clear_on_drop/nightly"]
+u64_backend = ["curve25519-dalek/u64_backend","ed25519-dalek/u64_backend"]
+u32_backend = ["curve25519-dalek/u32_backend","ed25519-dalek/u32_backend"]
+avx2_backend = ["curve25519-dalek/avx2_backend","ed25519-dalek/avx2_backend"]
+
