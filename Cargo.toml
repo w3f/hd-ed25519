@@ -1,16 +1,14 @@
 [package]
 name = "hd-ed25519"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["Jeff Burdges <jeff@web3.foundation>"]
 edition = "2018"
 readme = "README.md"
 license = "BSD-3-Clause"
-repository = "https://github.com/dalek-cryptography/curve25519-dalek"
-homepage = "https://dalek.rs/curve25519-dalek"
-documentation = "https://docs.rs/curve25519-dalek"
+repository = "https://github.com/w3f/hd-ed25519"
 categories = ["cryptography"] # "no-std"
 keywords = ["cryptography", "curve25519", "ECC"]
-description = ""
+description = "Hierachical key derivation on ed255190-dalek"
 
 
 [dependencies.ed25519-dalek]
