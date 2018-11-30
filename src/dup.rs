@@ -1,9 +1,9 @@
 //! Access fields of the `ExpandedSecretKey` type.  Ideally
-//! [ed25519-dalek](https://github.com/dalek-cryptography/ed25519-dalek) 
+//! [ed25519-dalek](https://github.com/dalek-cryptography/ed25519-dalek)
 //! might expose these fields directly, but this might tempt missuse.
 //!
 //! All code here is copied form ed25519-dalek and therefore copyright
-//! Isis Agora Lovecruft.  
+//! Isis Agora Lovecruft.
 
 use clear_on_drop::clear::Clear;
 use curve25519_dalek::constants;
@@ -44,9 +44,9 @@ impl ExpandedSecretKey {
         lower.copy_from_slice(&bytes[00..32]);
         upper.copy_from_slice(&bytes[32..64]);
 
-        ExpandedSecretKey{
-			key: Scalar::from_bits(lower),
-			nonce: upper  
-		}
+        ExpandedSecretKey {
+            key: Scalar::from_bits(lower),
+            nonce: upper,
+        }
     }
 }
