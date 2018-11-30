@@ -1,7 +1,17 @@
-//! Hierarchical key derivation on curve25519 and less insane than BIP32
+//! Hierarchical key derivation on curve25519 with cleaner structure than BIP32
 //!
+//! As in BIP32, we produce a chain code that can be incorporated into
+//! subsequence key derivations, and is similarly known by seret
+//! key holders.  We improve on BIP32 in several respects though:
+//!
+//! We replace the 32 bit integer paramater in BIP32 with a free form
+//! byte array, optionally presented as a hash state.  We expect this
+//! simpifies user code by avoiding any allocation requirements for 
+//! integer paramaters.
 //! 
-//! 
+//! We do not conflate the "soft" derivation path that supports public
+//! key derivation with the "hard" derivation path that simply prodiuces
+//! some new private key.
 
 extern crate curve25519_dalek;
 extern crate ed25519_dalek;
@@ -113,7 +123,7 @@ impl From<ExpandedSecretKey> for ExpandedKeypair {
 impl ExtendedKey<ExpandedKeypair> {
 	/// Derive an expanded secret key
 	///
-	/// We derive a scalar and 
+	/// We derive a full 255 bit scalar mod 8*l with zero low bits
 
 	/// We employ the 224 bit scalar trick from [BIP32-Ed25519](https://cardanolaunch.com/assets/Ed25519_BIP.pdf)
 	/// so that addition with normal Ed25519 scalars 
@@ -201,10 +211,13 @@ impl ExtendedKey<ExpandedSecretKey> {
 impl ExtendedKey<PublicKey> {
 	/// Derivative public key
 	///
+	/// Anyone who knows the source secret key, chain code, and byte array can
+	/// can derive the matching secret key.  
+    /// 
+	/// We derive a 32 but integer 
+	///
 	/// We replace the 32 bit integer paramater in BIP32 with a free
 	/// form byte array, which simpifies user code dramatically. 
-	/// Anyone who knows the source secret key and the same byte array can
-	/// can derive the matching public key, even if they lack the private key.
 	///
 	/// We produce a chain code that can be incorporated into subsequence
 	/// key derivations' mask byte array, and is similarly known by seret
