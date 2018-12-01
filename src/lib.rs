@@ -121,7 +121,12 @@ impl From<ExpandedSecretKey> for ExpandedKeypair {
 pub struct ExtendedKey<K> {
     pub key: K,
 
-    // Chain codes are randomness that 
+	/// We cannot assume the original public key is secret and additional
+	/// inputs might have low entropy, like `i` in BIP32.  As in BIP32, 
+	/// chain code fill this gap by being a high entropy secret shared
+	/// between public and private key holders.  These are produced by
+	/// key derivations and can be incorporated into subsequence key
+	/// derivations.  
     pub chaincode: [u8; CHAIN_CODE_LENGTH],
 }
 
