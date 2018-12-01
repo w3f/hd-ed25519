@@ -87,13 +87,6 @@ where
 // so no downsides to using 32 bytes.
 pub const CHAIN_CODE_LENGTH: usize = 32;
 
-pub struct ExtendedKey<K> {
-    pub key: K,
-
-    // Chain codes are randomness
-    pub chaincode: [u8; CHAIN_CODE_LENGTH],
-}
-
 /// Key pair using an `ExpandedSecretKey` instead of `SecretKey` to permit key derivation.
 #[repr(C)]
 pub struct ExpandedKeypair {
@@ -124,6 +117,13 @@ impl From<ExpandedSecretKey> for ExpandedKeypair {
 	}
 }
 */
+
+pub struct ExtendedKey<K> {
+    pub key: K,
+
+    // Chain codes are randomness that 
+    pub chaincode: [u8; CHAIN_CODE_LENGTH],
+}
 
 impl ExtendedKey<ExpandedKeypair> {
     /// Derive an expanded secret key
@@ -214,8 +214,7 @@ impl ExtendedKey<ExpandedSecretKey> {
         ExtendedKey {
             key: ExpandedKeypair { secret, public },
             chaincode: self.chaincode.clone(),
-        }
-        .derive_secret_key_prehashed(h)
+        }.derive_secret_key_prehashed(h)
     }
 }
 
@@ -344,31 +343,26 @@ mod tests {
             h.input(b"Another");
 
             if i % 5 == 0 {
-                let good_sig = extended_expanded_keypair
-                    .key
+                let good_sig = extended_expanded_keypair.key
                     .sign_prehashed::<Sha512>(h.clone(), context);
                 let h_bad = h.clone().chain(b"oops");
-                let bad_sig = extended_expanded_keypair
-                    .key
+                let bad_sig = extended_expanded_keypair.key
                     .sign_prehashed::<Sha512>(h_bad.clone(), context);
 
                 assert!(
-                    extended_public_key
-                        .key
+                    extended_public_key.key
                         .verify_prehashed::<Sha512>(h.clone(), context, &good_sig)
                         .is_ok(),
                     "Verification of a valid signature failed!"
                 );
                 assert!(
-                    extended_public_key
-                        .key
+                    extended_public_key.key
                         .verify_prehashed::<Sha512>(h.clone(), context, &bad_sig)
                         .is_err(),
                     "Verification of a signature on a different message passed!"
                 );
                 assert!(
-                    extended_public_key
-                        .key
+                    extended_public_key.key
                         .verify_prehashed::<Sha512>(h_bad, context, &good_sig)
                         .is_err(),
                     "Verification of a signature on a different message passed!"
