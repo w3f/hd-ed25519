@@ -53,10 +53,7 @@ mod dup;
 /// We remove the silly scalar addion and nonce addition modulo 256
 /// from BIP32-Ed25519's hard code path because simply replacing
 /// the key and nonce suffice in this code path of BIP32.
-pub fn expanded_secret_key_prehashed<D, I>(
-    esk: ExpandedSecretKey,
-    mut h: D,
-) -> ExpandedSecretKey
+pub fn expanded_secret_key_prehashed<D, I>(esk: ExpandedSecretKey, mut h: D) -> ExpandedSecretKey
 where
     D: Digest<OutputSize = U64>,
 {
@@ -111,22 +108,22 @@ impl ExpandedKeypair {
 
 /*
 impl From<ExpandedSecretKey> for ExpandedKeypair {
-	fn from(secret: ExpandedSecretKey) -> ExpandedKeypair {
-		let public = ExpandedSecretKey::from_bytes(&esk).unwrap().into();  // hack for secret.clone().into();
-		ExpandedKeypair { secret, public }
-	}
+    fn from(secret: ExpandedSecretKey) -> ExpandedKeypair {
+        let public = ExpandedSecretKey::from_bytes(&esk).unwrap().into();  // hack for secret.clone().into();
+        ExpandedKeypair { secret, public }
+    }
 }
 */
 
 pub struct ExtendedKey<K> {
     pub key: K,
 
-	/// We cannot assume the original public key is secret and additional
-	/// inputs might have low entropy, like `i` in BIP32.  As in BIP32, 
-	/// chain code fill this gap by being a high entropy secret shared
-	/// between public and private key holders.  These are produced by
-	/// key derivations and can be incorporated into subsequence key
-	/// derivations.  
+    /// We cannot assume the original public key is secret and additional
+    /// inputs might have low entropy, like `i` in BIP32.  As in BIP32,
+    /// chain code fill this gap by being a high entropy secret shared
+    /// between public and private key holders.  These are produced by
+    /// key derivations and can be incorporated into subsequence key
+    /// derivations.  
     pub chaincode: [u8; CHAIN_CODE_LENGTH],
 }
 
@@ -219,7 +216,8 @@ impl ExtendedKey<ExpandedSecretKey> {
         ExtendedKey {
             key: ExpandedKeypair { secret, public },
             chaincode: self.chaincode,
-        }.derive_secret_key_prehashed(h)
+        }
+        .derive_secret_key_prehashed(h)
     }
 }
 
@@ -348,26 +346,33 @@ mod tests {
             h.update(b"Another");
 
             if i % 5 == 0 {
-                let good_sig = extended_expanded_keypair.key
-                    .sign_prehashed::<Sha512>(h.clone(), context).unwrap();
+                let good_sig = extended_expanded_keypair
+                    .key
+                    .sign_prehashed::<Sha512>(h.clone(), context)
+                    .unwrap();
                 let h_bad = h.clone().chain(b"oops");
-                let bad_sig = extended_expanded_keypair.key
-                    .sign_prehashed::<Sha512>(h_bad.clone(), context).unwrap();
+                let bad_sig = extended_expanded_keypair
+                    .key
+                    .sign_prehashed::<Sha512>(h_bad.clone(), context)
+                    .unwrap();
 
                 assert!(
-                    extended_public_key.key
+                    extended_public_key
+                        .key
                         .verify_prehashed::<Sha512>(h.clone(), context, &good_sig)
                         .is_ok(),
                     "Verification of a valid signature failed!"
                 );
                 assert!(
-                    extended_public_key.key
+                    extended_public_key
+                        .key
                         .verify_prehashed::<Sha512>(h.clone(), context, &bad_sig)
                         .is_err(),
                     "Verification of a signature on a different message passed!"
                 );
                 assert!(
-                    extended_public_key.key
+                    extended_public_key
+                        .key
                         .verify_prehashed::<Sha512>(h_bad, context, &good_sig)
                         .is_err(),
                     "Verification of a signature on a different message passed!"
