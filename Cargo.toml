@@ -12,19 +12,16 @@ description = "Hierachical key derivation on ed255190-dalek"
 
 
 [dependencies.ed25519-dalek]
-version = "1.0.0-pre.0"
+version = "1"
 default-features = false
-# version = "^0.8.1"
 
 [dependencies.curve25519-dalek]
-version = "1.0.0-pre.0"
+version = "3"
 default-features = false
-# version = "^0.2"
 
 [dependencies.rand]
-version = "0.5"
+version = "0.7"
 default-features = false
-features = ["i128_support"]
 
 [dependencies.serde]
 version = "^1.0"
@@ -34,15 +31,16 @@ optional = true
 version = "0.2"
 
 [dev-dependencies]
-sha2 = "^0.8"
+sha2 = "^0.9"
 
 [features]
-default = ["std", "u64_backend"]
+default = ["dalek-rand", "std", "u64_backend"]
+dalek-rand = ["ed25519-dalek/rand"]
 # We don't add "rand/std" here because it would enable a bunch of Fuchsia dependencies.
-std = ["curve25519-dalek/std"]
+std = ["curve25519-dalek/std", "rand/std"]
 alloc = ["curve25519-dalek/alloc"]
 # nightly = ["curve25519-dalek/nightly", "rand/nightly", "clear_on_drop/nightly"]
 u64_backend = ["curve25519-dalek/u64_backend","ed25519-dalek/u64_backend"]
 u32_backend = ["curve25519-dalek/u32_backend","ed25519-dalek/u32_backend"]
-avx2_backend = ["curve25519-dalek/avx2_backend","ed25519-dalek/avx2_backend"]
+simd_backend = ["curve25519-dalek/simd_backend","ed25519-dalek/simd_backend"]
 
