@@ -53,15 +53,15 @@ mod dup;
 /// We remove the silly scalar addion and nonce addition modulo 256
 /// from BIP32-Ed25519's hard code path because simply replacing
 /// the key and nonce suffice in this code path of BIP32.
-pub fn expanded_secret_key_prehashed<'a, D, I>(
+pub fn expanded_secret_key_prehashed<D, I>(
     esk: ExpandedSecretKey,
     mut h: D,
 ) -> ExpandedSecretKey
 where
     D: Digest<OutputSize = U64>,
 {
-    h.input(&esk.to_bytes() as &[u8]);
-    let r = h.result();
+    h.update(&esk.to_bytes() as &[u8]);
+    let r = h.finalize();
 
     let mut lower: [u8; 32] = [0u8; 32];
     let mut upper: [u8; 32] = [0u8; 32];
@@ -101,7 +101,7 @@ impl ExpandedKeypair {
         &self,
         h: D,
         context: Option<&'static [u8]>,
-    ) -> ed25519_dalek::Signature
+    ) -> Result<ed25519_dalek::Signature, ed25519_dalek::SignatureError>
     where
         D: Digest<OutputSize = U64> + Default,
     {
@@ -155,16 +155,16 @@ impl ExtendedKey<ExpandedKeypair> {
     {
         let esk = self.key.secret.to_bytes(); // Ugly lack of fields hack
 
-        h.input(self.key.public.as_bytes());
-        h.input(&self.chaincode);
+        h.update(self.key.public.as_bytes());
+        h.update(&self.chaincode);
         let mut h_secret = h.clone();
-        let r = h.result();
+        let r = h.finalize();
 
         let mut chaincode = [0u8; CHAIN_CODE_LENGTH];
         chaincode.copy_from_slice(&r.as_slice()[32..32 + CHAIN_CODE_LENGTH]);
 
-        h_secret.input(&esk as &[u8]); // We compute the nonce from the private key instead of the public key.
-        let r_secret = h_secret.result();
+        h_secret.update(&esk as &[u8]); // We compute the nonce from the private key instead of the public key.
+        let r_secret = h_secret.finalize();
 
         let mut esk = dup::ExpandedSecretKey::from_bytes(&esk); // Ugly lack of fields hack
         esk.nonce.copy_from_slice(&r_secret.as_slice()[32..64]);
@@ -215,10 +215,10 @@ impl ExtendedKey<ExpandedSecretKey> {
     {
         let esk = self.key.to_bytes();
         let secret = ExpandedSecretKey::from_bytes(&esk).unwrap(); // hack: self.key.clone();
-        let public = ExpandedSecretKey::from_bytes(&esk).unwrap().into(); // hack: secret.clone().into();
+        let public = (&ExpandedSecretKey::from_bytes(&esk).unwrap()).into(); // hack: secret.clone().into();
         ExtendedKey {
             key: ExpandedKeypair { secret, public },
-            chaincode: self.chaincode.clone(),
+            chaincode: self.chaincode,
         }.derive_secret_key_prehashed(h)
     }
 }
@@ -241,9 +241,9 @@ impl ExtendedKey<PublicKey> {
     where
         D: Digest<OutputSize = U64> + Clone,
     {
-        h.input(self.key.as_bytes());
-        h.input(&self.chaincode);
-        let r = h.result();
+        h.update(self.key.as_bytes());
+        h.update(&self.chaincode);
+        let r = h.finalize();
 
         let mut chaincode = [0u8; CHAIN_CODE_LENGTH];
         chaincode.copy_from_slice(&r.as_slice()[32..32 + CHAIN_CODE_LENGTH]);
@@ -296,14 +296,14 @@ mod tests {
     fn cofactor_adjustment() {
         let mut x: [u8; 32] = thread_rng().gen();
         x[31] &= 0b00011111;
-        let mut y = x.clone();
+        let mut y = x;
         multiply_scalar_by_cofactor(&mut y);
         divide_scalar_by_cofactor(&mut y);
         assert_eq!(x, y);
 
         let mut x: [u8; 32] = thread_rng().gen();
         x[0] &= 0b11111000;
-        let mut y = x.clone();
+        let mut y = x;
         divide_scalar_by_cofactor(&mut y);
         multiply_scalar_by_cofactor(&mut y);
         assert_eq!(x, y);
@@ -314,18 +314,18 @@ mod tests {
         let mut rng = thread_rng();
         let chaincode = [0u8; CHAIN_CODE_LENGTH];
         let mut h: Sha512 = Sha512::default();
-        h.input(b"Just some test message!");
+        h.update(b"Just some test message!");
 
         let secret_key = SecretKey::generate(&mut rng);
         let mut extended_expanded_keypair = ExtendedKey {
             key: ExpandedKeypair {
-                secret: ExpandedSecretKey::from_secret_key::<Sha512>(&secret_key),
-                public: PublicKey::from_secret::<Sha512>(&secret_key),
+                secret: (&secret_key).into(),
+                public: (&secret_key).into(),
             },
             chaincode,
         };
         let mut extended_public_key = ExtendedKey {
-            key: PublicKey::from_secret::<Sha512>(&secret_key),
+            key: (&secret_key).into(),
             chaincode,
         };
 
@@ -345,14 +345,14 @@ mod tests {
             );
             extended_expanded_keypair = extended_expanded_keypair1;
             extended_public_key = extended_public_key1;
-            h.input(b"Another");
+            h.update(b"Another");
 
             if i % 5 == 0 {
                 let good_sig = extended_expanded_keypair.key
-                    .sign_prehashed::<Sha512>(h.clone(), context);
+                    .sign_prehashed::<Sha512>(h.clone(), context).unwrap();
                 let h_bad = h.clone().chain(b"oops");
                 let bad_sig = extended_expanded_keypair.key
-                    .sign_prehashed::<Sha512>(h_bad.clone(), context);
+                    .sign_prehashed::<Sha512>(h_bad.clone(), context).unwrap();
 
                 assert!(
                     extended_public_key.key

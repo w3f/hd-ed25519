@@ -6,7 +6,6 @@
 //! Isis Agora Lovecruft.
 
 use clear_on_drop::clear::Clear;
-use curve25519_dalek::constants;
 use curve25519_dalek::scalar::Scalar;
 // use curve25519_dalek::edwards::{CompressedEdwardsY,EdwardsPoint},
 use ed25519_dalek::EXPANDED_SECRET_KEY_LENGTH;
